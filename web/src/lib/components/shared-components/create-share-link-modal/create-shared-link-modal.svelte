@@ -10,7 +10,7 @@
   import { handleError } from '$lib/utils/handle-error';
   import { SharedLinkType, createSharedLink, updateSharedLink, type SharedLinkResponseDto } from '@immich/sdk';
   import { mdiLink } from '@mdi/js';
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import BaseModal from '../base-modal.svelte';
   import type { ImmichDropDownOption } from '../dropdown-button.svelte';
   import DropdownButton from '../dropdown-button.svelte';
@@ -19,6 +19,9 @@
   export let albumId: string | undefined = undefined;
   export let assetIds: string[] = [];
   export let editingLink: SharedLinkResponseDto | undefined = undefined;
+
+  export let onClose: () => void | Promise<void>;
+  export let onEscape: (() => void) | undefined = undefined;
 
   let sharedLink: string | null = null;
   let description = '';
@@ -30,11 +33,6 @@
   let shouldChangeExpirationTime = false;
   let canCopyImagesToClipboard = true;
   let enablePassword = false;
-
-  const dispatch = createEventDispatcher<{
-    close: void;
-    escape: void;
-  }>();
 
   const expiredDateOption: ImmichDropDownOption = {
     default: 'Never',
@@ -153,14 +151,14 @@
         message: 'Edited',
       });
 
-      dispatch('close');
+      onClose();
     } catch (error) {
       handleError(error, 'Failed to edit shared link');
     }
   };
 </script>
 
-<BaseModal on:close={() => dispatch('close')} on:escape={() => dispatch('escape')}>
+<BaseModal {onClose} {onEscape}>
   <svelte:fragment slot="title">
     <span class="flex place-items-center gap-2">
       <Icon path={mdiLink} size={24} />

@@ -14,7 +14,6 @@
   import type { AssetResponseDto } from '@immich/sdk';
   import { mdiCheckCircle, mdiCircleOutline } from '@mdi/js';
   import justifiedLayout from 'justified-layout';
-  import { createEventDispatcher } from 'svelte';
   import { fly } from 'svelte/transition';
   import Thumbnail from '../assets/thumbnail/thumbnail.svelte';
 
@@ -29,13 +28,12 @@
   export let assetStore: AssetStore;
   export let assetInteractionStore: AssetInteractionStore;
 
+  export let onSelect: (opts: { title: string; assets: AssetResponseDto[] }) => void;
+  export let onSelectAssets: (assertResponseDto: AssetResponseDto) => void;
+  export let onSelectAssetCandidates: (assertResponseDto: AssetResponseDto | null) => void;
+  export let onShift: (opts: { heightDelta: number }) => void;
+
   const { selectedGroup, selectedAssets, assetSelectionCandidates, isMultiSelectState } = assetInteractionStore;
-  const dispatch = createEventDispatcher<{
-    select: { title: string; assets: AssetResponseDto[] };
-    selectAssets: AssetResponseDto;
-    selectAssetCandidates: AssetResponseDto | null;
-    shift: { heightDelta: number };
-  }>();
 
   let isMouseOverGroup = false;
   let actualBucketHeight: number;
@@ -74,7 +72,7 @@
   }
 
   function scrollTimeline(heightDelta: number) {
-    dispatch('shift', {
+    onShift({
       heightDelta,
     });
   }
@@ -88,10 +86,10 @@
     assetViewingStore.setAssetId(asset.id);
   };
 
-  const handleSelectGroup = (title: string, assets: AssetResponseDto[]) => dispatch('select', { title, assets });
+  const handleSelectGroup = (title: string, assets: AssetResponseDto[]) => onSelect({ title, assets });
 
   const assetSelectHandler = (asset: AssetResponseDto, assetsInDateGroup: AssetResponseDto[], groupTitle: string) => {
-    dispatch('selectAssets', asset);
+    onSelectAssets(asset);
 
     // Check if all assets are selected in a group to toggle the group selection's icon
     let selectedAssetsInGroupCount = assetsInDateGroup.filter((asset) => $selectedAssets.has(asset)).length;
@@ -109,7 +107,7 @@
     hoveredDateGroup = groupTitle;
 
     if ($isMultiSelectState) {
-      dispatch('selectAssetCandidates', asset);
+      onSelectAssetCandidates(asset);
     }
   };
 </script>
