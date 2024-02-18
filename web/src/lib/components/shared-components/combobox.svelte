@@ -53,7 +53,7 @@
   };
 </script>
 
-<div class="relative" use:clickOutside on:outclick={handleOutClick}>
+<div class="relative w-full" use:clickOutside on:outclick={handleOutClick}>
   <button {type} class="immich-form-input text-sm text-left w-full min-h-[48px] transition-all" on:click={handleClick}
     >{#if !noLabel}
       {selectedOption?.label || ''}
