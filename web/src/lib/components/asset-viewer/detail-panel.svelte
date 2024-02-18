@@ -447,6 +447,7 @@
       {@const assetDateTimeOriginal = asset.exifInfo?.dateTimeOriginal
         ? DateTime.fromISO(asset.exifInfo.dateTimeOriginal, {
             zone: asset.exifInfo.timeZone ?? undefined,
+            locale: $locale,
           })
         : DateTime.now()}
       <ChangeDate
