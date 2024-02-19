@@ -17,7 +17,7 @@ x-server-build: &server-common
 services:
   immich-server:
     container_name: immich_server
-    command: [ "./start-server.sh" ]
+    command: ["./start-server.sh"]
     <<: *server-common
     ports:
       - 2283:3001
@@ -27,7 +27,7 @@ services:
 
   immich-microservices:
     container_name: immich_microservices
-    command: [ "./start-microservices.sh" ]
+    command: ["./start-microservices.sh"]
     <<: *server-common
     # extends:
     #   file: hwaccel.transcoding.yml
@@ -36,6 +36,23 @@ services:
       - redis
       - database
       - immich-server
+
+  immich-prometheus:
+    container_name: immich_prometheus
+    ports:
+      - 9090:9090
+    image: prom/prometheus
+    command:
+      [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus",
+        "--web.console.libraries=/usr/share/prometheus/console_libraries",
+        "--web.console.templates=/usr/share/prometheus/consoles",
+        "--enable-feature=otlp-write-receiver"
+      ]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
 
   immich-machine-learning:
     container_name: immich_machine_learning
@@ -75,3 +92,4 @@ services:
 
 volumes:
   model-cache:
+  prometheus-data:

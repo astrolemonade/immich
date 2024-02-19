@@ -2,6 +2,7 @@ import { CropOptions, IMediaRepository, ResizeOptions, TranscodeOptions, VideoIn
 import { Colorspace } from '@app/infra/entities';
 import { ImmichLogger } from '@app/infra/logger';
 import ffmpeg, { FfprobeData } from 'fluent-ffmpeg';
+import { Span } from 'nestjs-otel';
 import fs from 'node:fs/promises';
 import { Writable } from 'node:stream';
 import { promisify } from 'node:util';
@@ -14,6 +15,7 @@ sharp.cache({ files: 0 });
 export class MediaRepository implements IMediaRepository {
   private logger = new ImmichLogger(MediaRepository.name);
 
+  @Span()
   crop(input: string | Buffer, options: CropOptions): Promise<Buffer> {
     return sharp(input, { failOn: 'none' })
       .pipelineColorspace('rgb16')
@@ -26,6 +28,7 @@ export class MediaRepository implements IMediaRepository {
       .toBuffer();
   }
 
+  @Span()
   async resize(input: string | Buffer, output: string, options: ResizeOptions): Promise<void> {
     await sharp(input, { failOn: 'none' })
       .pipelineColorspace(options.colorspace === Colorspace.SRGB ? 'srgb' : 'rgb16')
@@ -40,6 +43,7 @@ export class MediaRepository implements IMediaRepository {
       .toFile(output);
   }
 
+  @Span()
   async probe(input: string): Promise<VideoInfo> {
     const results = await probe(input);
     return {
@@ -73,6 +77,7 @@ export class MediaRepository implements IMediaRepository {
     };
   }
 
+  @Span()
   transcode(input: string, output: string | Writable, options: TranscodeOptions): Promise<void> {
     if (!options.twoPass) {
       return new Promise((resolve, reject) => {
@@ -119,20 +124,7 @@ export class MediaRepository implements IMediaRepository {
     });
   }
 
-  configureFfmpegCall(input: string, output: string | Writable, options: TranscodeOptions) {
-    return ffmpeg(input, { niceness: 10 })
-      .setFfmpegPath(options.ffmpegPath || 'ffmpeg')
-      .inputOptions(options.inputOptions)
-      .outputOptions(options.outputOptions)
-      .output(output)
-      .on('error', (error, stdout, stderr) => this.logger.error(stderr || error));
-  }
-
-  chainPath(existing: string, path: string) {
-    const separator = existing.endsWith(':') ? '' : ':';
-    return `${existing}${separator}${path}`;
-  }
-
+  @Span()
   async generateThumbhash(imagePath: string): Promise<Buffer> {
     const maxSize = 100;
 
@@ -144,5 +136,19 @@ export class MediaRepository implements IMediaRepository {
 
     const thumbhash = await import('thumbhash');
     return Buffer.from(thumbhash.rgbaToThumbHash(info.width, info.height, data));
+  }
+
+  private configureFfmpegCall(input: string, output: string | Writable, options: TranscodeOptions) {
+    return ffmpeg(input, { niceness: 10 })
+      .setFfmpegPath(options.ffmpegPath || 'ffmpeg')
+      .inputOptions(options.inputOptions)
+      .outputOptions(options.outputOptions)
+      .output(output)
+      .on('error', (error, stdout, stderr) => this.logger.error(stderr || error));
+  }
+
+  private chainPath(existing: string, path: string) {
+    const separator = existing.endsWith(':') ? '' : ':';
+    return `${existing}${separator}${path}`;
   }
 }
