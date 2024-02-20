@@ -33,5 +33,5 @@
     <p class="text-sm dark:text-immich-dark-fg">{subtitle}</p>
   </div>
 
-  <Slider {checked} {disabled} on:click={onToggle} />
+  <Slider bind:checked {disabled} on:click={onToggle} />
 </div>
